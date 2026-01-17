@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  basePath: '/workify',
   // Configuraciones de seguridad críticas
   poweredByHeader: false, // Remover header X-Powered-By
   compress: true, // Habilitar compresión

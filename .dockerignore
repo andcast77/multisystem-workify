@@ -40,3 +40,12 @@ coverage
 # Misc
 *.tsbuildinfo
 .cache
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# Documentation
+*.md
+docs
