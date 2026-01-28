@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  basePath: '/workify',
+  // basePath eliminado - cada módulo tiene su propio dominio en Vercel
   // Configuraciones de seguridad críticas
   poweredByHeader: false, // Remover header X-Powered-By
   compress: true, // Habilitar compresión
