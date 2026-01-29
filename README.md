@@ -90,7 +90,7 @@ workify/
 ### Prerrequisitos
 
 - Node.js 18+
-- Docker y Docker Compose (para PostgreSQL)
+- PostgreSQL (servicio externo como Neon o Railway para producción)
 - npm o yarn
 
 ### Pasos de Instalación
@@ -106,20 +106,15 @@ cd workify
 npm install
 ```
 
-3. **Iniciar servicios con Docker**
-```bash
-# Iniciar PostgreSQL con Docker
-npm run docker:up
-```
-
-4. **Configurar variables de entorno**
+3. **Configurar variables de entorno**
 ```bash
 cp env.example .env.local
 ```
 
 Editar `.env.local` con tus configuraciones:
 ```env
-DATABASE_URL="postgresql://postgres:postgres@localhost:5433/workify_db"
+# Para desarrollo local, usa PostgreSQL local o un servicio externo como Neon
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/workify_db"
 JWT_SECRET="dev-secret-key-change-this-in-production-minimum-32-chars"
 NEXT_PUBLIC_APP_URL="http://localhost:3000"
 ```
@@ -168,14 +163,6 @@ El proyecto estará disponible en `http://localhost:3000`
 npm run dev          # Servidor de desarrollo
 npm run build        # Build de producción
 npm run start        # Servidor de producción
-
-# Docker
-npm run docker:up    # Iniciar servicios Docker (PostgreSQL)
-npm run docker:down  # Detener servicios Docker
-npm run docker:logs  # Ver logs de PostgreSQL
-npm run docker:postgres-cli  # Conectar a PostgreSQL CLI
-npm run docker:postgres-logs  # Ver logs de PostgreSQL
-npm run docker:clean # Limpiar contenedores y volúmenes
 
 # Base de datos
 npm run db:generate  # Generar cliente Prisma
@@ -230,66 +217,17 @@ npm run test:coverage
 ### Vercel (Recomendado)
 
 1. Conectar repositorio a Vercel
-2. Configurar variables de entorno
+2. Configurar variables de entorno en el dashboard de Vercel:
+   - `DATABASE_URL`: URL de tu base de datos PostgreSQL (Neon, Railway, etc.)
+   - `JWT_SECRET`: Clave secreta segura (mínimo 32 caracteres)
+   - `NEXT_PUBLIC_APP_URL`: URL de tu aplicación desplegada
+   - `NODE_ENV`: `production`
 3. Deploy automático en push a main
 
-### Docker
-
-#### Servicios con Docker Compose
-
-El proyecto incluye configuración de Docker para PostgreSQL:
-
-```bash
-# Iniciar PostgreSQL
-npm run docker:up
-
-# Ver logs de PostgreSQL
-npm run docker:logs
-
-# Conectar al CLI de PostgreSQL
-npm run docker:postgres-cli
-
-# Detener servicios
-npm run docker:down
-
-# Limpiar volúmenes (borra datos persistidos)
-npm run docker:clean
-```
-
-#### Configuración de PostgreSQL
-
-PostgreSQL está configurado para:
-- **Imagen**: `postgres:16-alpine`
-- **Base de datos**: `workify_db`
-- **Usuario**: `postgres`
-- **Contraseña**: `postgres` (cambiar en producción)
-- **Puerto**: `5433` (puerto externo, 5432 interno)
-- **Persistencia**: Datos guardados en volumen Docker `postgres_data`
-- **Healthcheck**: Verificación automática con `pg_isready`
-- **Reinicio automático**: Se reinicia si falla
-
-#### Variables de Entorno
-
-```env
-# PostgreSQL
-DATABASE_URL="postgresql://postgres:postgres@localhost:5433/workify_db"
-```
-
-#### Troubleshooting Docker
-
-```bash
-# Ver estado de contenedores
-docker ps
-
-# Ver logs detallados
-docker-compose logs postgres
-
-# Reiniciar servicio
-docker-compose restart postgres
-
-# Verificar conectividad PostgreSQL
-docker exec -it next-workify-postgres psql -U postgres -d workify_db -c "SELECT version();"
-```
+**Nota**: Para producción, usa un servicio de base de datos gestionado como:
+- [Neon](https://neon.tech) - PostgreSQL serverless
+- [Railway](https://railway.app) - PostgreSQL con plan gratuito
+- [Supabase](https://supabase.com) - PostgreSQL con extras
 
 ## 🤝 Contribución
 
@@ -341,7 +279,6 @@ Este proyecto está bajo la Licencia MIT. Ver el archivo [LICENSE](LICENSE) para
 - ✅ Tailwind CSS con shadcn/ui
 - ✅ Autenticación JWT
 - ✅ PWA con Service Workers
-- ✅ Docker para desarrollo
 - ✅ Testing con Vitest
 - ✅ ESLint y Prettier
 

@@ -16,13 +16,7 @@
     "test:security-logging": "node scripts/test-security-logging.mjs",
     "test:integration": "jest --config jest.integration.config.js",
     "test:e2e": "playwright test",
-    "test:coverage": "jest --coverage",
-    "docker:up": "docker-compose up -d",
-    "docker:down": "docker-compose down",
-    "docker:logs": "docker-compose logs -f postgres",
-    "docker:postgres-cli": "docker exec -it next-workify-postgres psql -U postgres -d workify_db",
-    "docker:postgres-logs": "docker-compose logs -f postgres",
-    "docker:clean": "docker-compose down -v --remove-orphans"
+    "test:coverage": "jest --coverage"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
