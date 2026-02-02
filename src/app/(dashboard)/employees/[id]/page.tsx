@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import { workifyApi } from '@/lib/api/client';
 import { Button } from '@/components/ui/buttons/Button';
 
 interface Employee {
@@ -38,16 +39,7 @@ export default function EmployeePage() {
         setLoading(true);
         setError(null);
 
-        const response = await fetch(`/api/employees/${params.id}`);
-        
-        if (!response.ok) {
-          if (response.status === 404) {
-            throw new Error('Empleado no encontrado');
-          }
-          throw new Error('Error al cargar el empleado');
-        }
-
-        const data = await response.json();
+        const data = await workifyApi.get<{ employee: Employee }>(`/employees/${params.id}`);
         setEmployee(data.employee);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Error inesperado');

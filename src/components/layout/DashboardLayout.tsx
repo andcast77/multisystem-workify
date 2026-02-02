@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { UserWithRelations } from '@/types';
+import { authApi, workifyApi } from '@/lib/api/client';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -15,18 +16,25 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const pathname = usePathname();
 
   useEffect(() => {
-    fetch('/api/me')
-      .then(res => {
-        if (res.status === 200) return res.json();
-        throw new Error();
+    workifyApi
+      .get<{ user?: UserWithRelations }>('/me')
+      .then(data => {
+        if (!data?.user) window.location.href = '/login';
+        else setUser(data.user);
       })
-      .then(data => setUser(data.user))
-      .catch(() => window.location.href = '/login')
+      .catch(() => { window.location.href = '/login'; })
       .finally(() => setIsLoading(false));
   }, []);
 
   const handleLogout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' });
+    try {
+      await authApi.post('/logout');
+    } catch {
+      // ignore
+    }
+    if (typeof document !== 'undefined') {
+      document.cookie = 'token=; path=/; max-age=0';
+    }
     window.location.href = '/login';
   };
 
@@ -43,12 +51,31 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
   if (!user) return null;
 
+  const userWithCompany = user as { company?: { workifyEnabled?: boolean }; isSuperuser?: boolean };
+  if (
+    userWithCompany.company?.workifyEnabled === false &&
+    !userWithCompany.isSuperuser &&
+    (user as { companyId?: string }).companyId
+  ) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-amber-50">
+        <div className="max-w-md text-center">
+          <h1 className="text-xl font-semibold text-amber-900 mb-2">Módulo no activo</h1>
+          <p className="text-amber-800">
+            El módulo Workify no está activado para esta empresa. Contacta al administrador para activarlo.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   // Determinar si el usuario es admin o HR (case-insensitive, usando role.name)
   const userRoles = user.roles?.map(r => r.role?.name?.toLowerCase?.()) || [];
   const isAdminOrHR = userRoles.includes('admin') || userRoles.includes('hr');
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: '📊' },
+    { name: 'Usuarios', href: '/users', icon: '👤' },
     { name: 'Empleados', href: '/employees', icon: '👥' },
     { name: 'Asignaciones Especiales', href: '/employees/special-assignments', icon: '📅' },
     { name: 'Horas Trabajadas', href: '/time-entries', icon: '⏰' },

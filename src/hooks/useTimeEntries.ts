@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { workifyApi } from '@/lib/api/client';
 
 interface TimeEntry {
   id: string;
@@ -69,16 +70,10 @@ export function useTimeEntries(options: UseTimeEntriesOptions = {}) {
       if (options.page) params.append('page', options.page.toString());
       if (options.limit) params.append('limit', options.limit.toString());
 
-      const response = await fetch(`/api/time-entries?${params}`);
-      
-      if (!response.ok) {
-        throw new Error('Error al cargar las entradas de tiempo');
-      }
-
-      const data: TimeEntriesResponse = await response.json();
-      setTimeEntries(data.timeEntries);
-      setStats(data.stats);
-      setPagination(data.pagination);
+      const data = await workifyApi.get<{ timeEntries: TimeEntry[]; stats?: TimeEntriesResponse['stats']; pagination?: TimeEntriesResponse['pagination'] }>(`/time-entries?${params}`);
+      setTimeEntries(data.timeEntries || []);
+      setStats(data.stats ?? null);
+      setPagination(data.pagination ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido');
     } finally {
@@ -98,20 +93,7 @@ export function useTimeEntries(options: UseTimeEntriesOptions = {}) {
     source?: 'MANUAL' | 'BIOMETRIC' | 'IMPORT';
   }) => {
     try {
-      const response = await fetch('/api/time-entries', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(timeEntryData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error al crear entrada de tiempo');
-      }
-
-      const newTimeEntry = await response.json();
+      const newTimeEntry = await workifyApi.post<TimeEntry>('/time-entries', timeEntryData);
       setTimeEntries(prev => [newTimeEntry, ...prev]);
       return newTimeEntry;
     } catch (err) {
@@ -129,20 +111,7 @@ export function useTimeEntries(options: UseTimeEntriesOptions = {}) {
     status?: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CORRECTED';
   }) => {
     try {
-      const response = await fetch(`/api/time-entries/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updates),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error al actualizar entrada de tiempo');
-      }
-
-      const updatedTimeEntry = await response.json();
+      const updatedTimeEntry = await workifyApi.put<TimeEntry>(`/time-entries/${id}`, updates);
       setTimeEntries(prev => 
         prev.map(entry => 
           entry.id === id ? updatedTimeEntry : entry
@@ -156,15 +125,7 @@ export function useTimeEntries(options: UseTimeEntriesOptions = {}) {
 
   const deleteTimeEntry = async (id: string) => {
     try {
-      const response = await fetch(`/api/time-entries/${id}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error al eliminar entrada de tiempo');
-      }
-
+      await workifyApi.delete(`/time-entries/${id}`);
       setTimeEntries(prev => prev.filter(entry => entry.id !== id));
     } catch (err) {
       throw err instanceof Error ? err : new Error('Error desconocido');

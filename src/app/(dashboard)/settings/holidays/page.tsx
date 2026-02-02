@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { workifyApi } from '@/lib/api/client';
 import { Card } from '@/components/ui/layout/Card';
 import { Button } from '@/components/ui/buttons/Button';
 import { Badge } from '@/components/ui/data/Badge';
@@ -50,15 +51,7 @@ export default function HolidaysPage() {
   const fetchHolidays = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/holidays', {
-        credentials: 'include'
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch holidays');
-      }
-
-      const data = await response.json();
+      const data = await workifyApi.get<{ holidays: Holiday[] }>('/holidays');
       setHolidays(data.holidays || []);
     } catch (error) {
       console.error('Error fetching holidays:', error);
@@ -77,19 +70,11 @@ export default function HolidaysPage() {
       
       const method = editingHoliday ? 'PUT' : 'POST';
       
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to save holiday');
+      if (editingHoliday) {
+        await workifyApi.put(`/holidays/${editingHoliday.id}`, formData);
+      } else {
+        await workifyApi.post('/holidays', formData);
       }
-
       await fetchHolidays();
       handleCloseModal();
     } catch (error) {
@@ -103,15 +88,7 @@ export default function HolidaysPage() {
     }
 
     try {
-      const response = await fetch(`/api/holidays/${id}`, {
-        method: 'DELETE',
-        credentials: 'include'
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete holiday');
-      }
-
+      await workifyApi.delete(`/holidays/${id}`);
       await fetchHolidays();
     } catch (error) {
       console.error('Error deleting holiday:', error);

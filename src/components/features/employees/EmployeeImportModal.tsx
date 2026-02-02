@@ -61,8 +61,11 @@ export default function EmployeeImportModal({ isOpen, onClose, onImportSuccess }
     formData.append('fieldMapping', JSON.stringify(fieldMapping));
 
     try {
-      const response = await fetch('/api/employees/import', {
+      const { API_URL, getAuthHeaders } = await import('@/lib/api/client');
+      const response = await fetch(`${API_URL}/api/workify/employees/import`, {
         method: 'POST',
+        headers: getAuthHeaders(),
+        credentials: 'include',
         body: formData,
       });
 

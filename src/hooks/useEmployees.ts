@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { workifyApi } from '@/lib/api/client';
 
 interface Employee {
   id: string;
@@ -62,14 +63,17 @@ export function useEmployees(options: UseEmployeesOptions = {}) {
           ...(department && { department }),
         });
 
-        const response = await fetch(`/api/employees?${params}`);
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch employees');
-        }
-
-        const result = await response.json();
-        setData(result);
+        const result = await workifyApi.get<{ employees: Employee[]; total: number; page: number; limit: number }>(`/employees?${params}`);
+        setData({
+          employees: result.employees || [],
+          pagination: {
+            page: result.page ?? 1,
+            limit: result.limit ?? 10,
+            total: result.total ?? 0,
+            totalPages: result.limit ? Math.ceil((result.total ?? 0) / result.limit) : 0,
+          },
+          stats: { total: result.total ?? 0, active: 0, inactive: 0 },
+        });
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred');
       } finally {
@@ -80,10 +84,9 @@ export function useEmployees(options: UseEmployeesOptions = {}) {
     fetchEmployees();
   }, [page, limit, search, status, department]);
 
-  const refetch = () => {
+  const refetch = async () => {
     setLoading(true);
     setError(null);
-    // Trigger useEffect again
     const params = new URLSearchParams({
       page: page.toString(),
       limit: limit.toString(),
@@ -91,12 +94,23 @@ export function useEmployees(options: UseEmployeesOptions = {}) {
       ...(status && { status }),
       ...(department && { department }),
     });
-    
-    fetch(`/api/employees?${params}`)
-      .then(res => res.json())
-      .then(setData)
-      .catch(err => setError(err.message))
-      .finally(() => setLoading(false));
+    try {
+      const result = await workifyApi.get<{ employees: Employee[]; total: number; page: number; limit: number }>(`/employees?${params}`);
+      setData({
+        employees: result.employees || [],
+        pagination: {
+          page: result.page ?? 1,
+          limit: result.limit ?? 10,
+          total: result.total ?? 0,
+          totalPages: result.limit ? Math.ceil((result.total ?? 0) / result.limit) : 0,
+        },
+        stats: { total: result.total ?? 0, active: 0, inactive: 0 },
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return {

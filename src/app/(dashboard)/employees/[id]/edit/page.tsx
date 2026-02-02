@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
+import { workifyApi } from '@/lib/api/client';
 import EmployeeForm from '@/components/features/employees/EmployeeForm';
 
 interface Employee {
@@ -31,16 +32,7 @@ export default function EditEmployeePage() {
         setLoading(true);
         setError(null);
 
-        const response = await fetch(`/api/employees/${params.id}`);
-        
-        if (!response.ok) {
-          if (response.status === 404) {
-            throw new Error('Empleado no encontrado');
-          }
-          throw new Error('Error al cargar el empleado');
-        }
-
-        const data = await response.json();
+        const data = await workifyApi.get<{ employee: Employee }>(`/employees/${params.id}`);
         setEmployee(data.employee);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Error inesperado');

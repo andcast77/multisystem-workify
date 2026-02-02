@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import { workifyApi } from '@/lib/api/client';
 import { Button } from '@/components/ui/buttons/Button';
 import { Card } from '@/components/ui/layout/Card';
 import { Badge } from '@/components/ui/data/Badge';
@@ -72,39 +73,16 @@ export default function EmployeeSchedulePage() {
       setLoading(true);
       setError(null);
 
-      // Fetch employee data
-      const employeeResponse = await fetch(`/api/employees/${params.id}`, {
-        credentials: 'include'
-      });
-      
-      if (!employeeResponse.ok) {
-        throw new Error('Error al cargar el empleado');
-      }
-
-      const employeeData = await employeeResponse.json();
+      const employeeData = await workifyApi.get<{ employee: typeof employee }>(`/employees/${params.id}`);
       setEmployee(employeeData.employee);
 
-      // Fetch work shifts
-      const shiftsResponse = await fetch('/api/work-shifts', {
-        credentials: 'include'
-      });
-      
-      if (!shiftsResponse.ok) {
-        throw new Error('Error al cargar los turnos');
-      }
+      const shiftsData = await workifyApi.get<{ workShifts: typeof workShifts }>('/work-shifts');
+      setWorkShifts(shiftsData.workShifts || []);
 
-      const shiftsData = await shiftsResponse.json();
-      setWorkShifts(shiftsData.workShifts);
-
-      // Fetch current schedules
-      const schedulesResponse = await fetch(`/api/employees/${params.id}/schedule`, {
-        credentials: 'include'
-      });
-      
-      if (schedulesResponse.ok) {
-        const schedulesData = await schedulesResponse.json();
-        setSchedules(schedulesData.schedules);
-      } else {
+      try {
+        const schedulesData = await workifyApi.get<{ schedules: typeof schedules }>(`/employees/${params.id}/schedule`);
+        setSchedules(schedulesData.schedules || []);
+      } catch {
         // Initialize empty schedules for all days
         const emptySchedules = dayNames.map((_, index) => ({
           id: `temp-${index}`,
@@ -120,7 +98,7 @@ export default function EmployeeSchedulePage() {
         setSchedules(emptySchedules);
       }
 
-    } catch (err) {
+    } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Error inesperado');
     } finally {
       setLoading(false);
@@ -162,18 +140,7 @@ export default function EmployeeSchedulePage() {
         customBreakEnd: editForm.useCustomSchedule ? editForm.customBreakEnd : null
       };
 
-      const response = await fetch(`/api/employees/${params.id}/schedule`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(scheduleData),
-      });
-
-      if (!response.ok) {
-        throw new Error('Error al guardar el horario');
-      }
+      await workifyApi.post(`/employees/${params.id}/schedule`, scheduleData);
 
       // Update local state
       const updatedSchedules = schedules.map(schedule => 

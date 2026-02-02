@@ -1,6 +1,7 @@
 import { headers } from 'next/headers';
-import { UserWithRelations } from '@/types';
 import { useEffect, useState } from 'react';
+import { UserWithRelations } from '@/types';
+import { authApi, workifyApi } from '@/lib/api/client';
 
 // Definir el tipo AuthContextType localmente
 interface AuthContextType {
@@ -64,19 +65,12 @@ export async function requireAuth(): Promise<UserInfo> {
 // ========================================
 // FUNCIONES DE AUTENTICACIÓN DEL CLIENTE
 // ========================================
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
+// Uses unified API client (authApi) so base URL and auth headers are consistent.
 
 export async function checkAuthStatus(): Promise<UserWithRelations | null> {
   try {
-    const response = await fetch(`${API_URL}/api/auth/me`, {
-      credentials: 'include',
-    });
-    if (response.ok) {
-      const data = await response.json();
-      return data.user;
-    }
-    return null;
+    const data = await workifyApi.get<{ user?: UserWithRelations }>('/me');
+    return data?.user ?? null;
   } catch (error) {
     console.error('Error checking auth status:', error);
     return null;
@@ -84,26 +78,25 @@ export async function checkAuthStatus(): Promise<UserWithRelations | null> {
 }
 
 export async function loginUser(credentials: { email: string; password: string }): Promise<UserWithRelations> {
-  const response = await fetch(`${API_URL}/api/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify(credentials),
-  });
-
-  if (!response.ok) {
-    throw new Error('Login failed');
+  const data = await authApi.post<{ user: UserWithRelations; token?: string }>('/login', credentials);
+  const user = data?.user;
+  if (!user) throw new Error('Login failed');
+  // If API returns token and we're on client, set cookie for same-origin or cross-origin
+  if (typeof document !== 'undefined' && data?.token) {
+    document.cookie = `token=${encodeURIComponent(data.token)}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Strict`;
   }
-
-  const data = await response.json();
-  return data.user;
+  return user;
 }
 
 export async function logoutUser(): Promise<void> {
-  await fetch(`${API_URL}/api/auth/logout`, { 
-    method: 'POST',
-    credentials: 'include',
-  });
+  try {
+    await authApi.post('/logout');
+  } catch {
+    // ignore
+  }
+  if (typeof document !== 'undefined') {
+    document.cookie = 'token=; path=/; max-age=0';
+  }
   window.location.href = '/login';
 }
 
@@ -114,19 +107,13 @@ export async function registerUser(data: {
   firstName: string;
   lastName: string;
 }): Promise<UserWithRelations> {
-  const response = await fetch(`${API_URL}/api/auth/register`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify(data),
-  });
-
-  if (!response.ok) {
-    throw new Error('Registration failed');
+  const responseData = await authApi.post<{ user: UserWithRelations; token?: string }>('/register', data);
+  const user = responseData?.user;
+  if (!user) throw new Error('Registration failed');
+  if (typeof document !== 'undefined' && responseData?.token) {
+    document.cookie = `token=${encodeURIComponent(responseData.token)}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Strict`;
   }
-
-  const responseData = await response.json();
-  return responseData.user;
+  return user;
 }
 
 // ========================================

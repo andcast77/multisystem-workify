@@ -2,6 +2,7 @@
 
 import { useState, useTransition, useEffect } from 'react';
 import { Button, Input } from '@/components/ui';
+import { authApi } from '@/lib/api/client';
 
 // Función para generar token CSRF
 function generateCSRFToken(): string {
@@ -155,37 +156,28 @@ export default function RegisterForm() {
 
     startTransition(async () => {
       try {
-        const response = await fetch('/api/auth/register', {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'X-CSRF-Token': csrfToken
-          },
-          body: JSON.stringify({
-            email: formData.email.toLowerCase().trim(),
-            password: formData.password,
-            companyName: formData.companyName.trim(),
-            firstName: formData.firstName.trim(),
-            lastName: formData.lastName.trim(),
-            csrfToken
-          }),
+        const data = await authApi.post<{ user?: unknown; token?: string; error?: string }>('/register', {
+          email: formData.email.toLowerCase().trim(),
+          password: formData.password,
+          companyName: formData.companyName.trim(),
+          firstName: formData.firstName.trim(),
+          lastName: formData.lastName.trim(),
+          csrfToken,
         });
 
-        if (!response.ok) {
-          const data = await response.json();
-          setError(data.error || 'Error al registrar');
+        if (data?.error) {
+          setError(data.error);
           return;
         }
 
-        const data = await response.json();
-        
-        // Validar respuesta del servidor
-        if (!data.user || !data.token) {
+        if (!data?.user || !data?.token) {
           setError('Respuesta del servidor inválida');
           return;
         }
 
-        // Redirigir solo si la respuesta es válida
+        if (typeof document !== 'undefined' && data.token) {
+          document.cookie = `token=${encodeURIComponent(data.token)}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Strict`;
+        }
         window.location.href = '/dashboard';
       } catch (error) {
         console.error('Error de registro:', error);

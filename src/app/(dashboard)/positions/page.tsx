@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { workifyApi } from '@/lib/api/client';
 import { Card } from '@/components/ui/layout/Card';
 import { Button } from '@/components/ui/buttons/Button';
 import { Badge } from '@/components/ui/data/Badge';
@@ -90,11 +91,7 @@ export default function PositionsPage() {
   const fetchPositions = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/positions', { credentials: 'include' });
-      if (!response.ok) {
-        throw new Error('Failed to fetch positions');
-      }
-      const data = await response.json();
+      const data = await workifyApi.get<{ positions: Position[] }>('/positions');
       setPositions(data.positions || []);
     } catch (error) {
       console.error('Error fetching positions:', error);
@@ -113,13 +110,8 @@ export default function PositionsPage() {
       
       const method = editingPosition ? 'PUT' : 'POST';
       
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
+      if (editingPosition) {
+        await workifyApi.put(`/positions/${editingPosition.id}`, {
           ...formData,
           baseSalary: formData.baseSalary ? parseFloat(formData.baseSalary) : null,
           hourlyRate: formData.hourlyRate ? parseFloat(formData.hourlyRate) : null,
@@ -131,12 +123,23 @@ export default function PositionsPage() {
           standardHoursPerWeek: parseFloat(formData.standardHoursPerWeek),
           standardDaysPerWeek: parseInt(formData.standardDaysPerWeek),
           vacationDaysPerYear: parseInt(formData.vacationDaysPerYear),
-          sickDaysPerYear: parseInt(formData.sickDaysPerYear)
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to save position');
+          sickDaysPerYear: parseInt(formData.sickDaysPerYear),
+        });
+      } else {
+        await workifyApi.post('/positions', {
+          ...formData,
+          baseSalary: formData.baseSalary ? parseFloat(formData.baseSalary) : null,
+          hourlyRate: formData.hourlyRate ? parseFloat(formData.hourlyRate) : null,
+          dailyRate: formData.dailyRate ? parseFloat(formData.dailyRate) : null,
+          overtimeRate: parseFloat(formData.overtimeRate),
+          nightShiftRate: parseFloat(formData.nightShiftRate),
+          holidayRate: parseFloat(formData.holidayRate),
+          standardHoursPerDay: parseFloat(formData.standardHoursPerDay),
+          standardHoursPerWeek: parseFloat(formData.standardHoursPerWeek),
+          standardDaysPerWeek: parseInt(formData.standardDaysPerWeek),
+          vacationDaysPerYear: parseInt(formData.vacationDaysPerYear),
+          sickDaysPerYear: parseInt(formData.sickDaysPerYear),
+        });
       }
 
       await fetchPositions();
@@ -152,15 +155,7 @@ export default function PositionsPage() {
     }
 
     try {
-      const response = await fetch(`/api/positions/${id}`, {
-        method: 'DELETE',
-        credentials: 'include'
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete position');
-      }
-
+      await workifyApi.delete(`/positions/${id}`);
       await fetchPositions();
     } catch (error) {
       console.error('Error deleting position:', error);

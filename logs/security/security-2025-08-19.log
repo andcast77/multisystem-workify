@@ -1,2 +1,0 @@
-[2025-08-19T21:18:00.487Z] | [INFO] | [SYSTEM_STARTUP] | Sistema de logging de seguridad iniciado | session:session_1755638280487_2bs318gnkef
-[2025-08-19T21:18:01.573Z] | [INFO] | [LOGIN_SUCCESS] | Login exitoso para admin@workify.com | ip:::1 | path:/api/auth/login | method:POST | session:session_1755638281573_lz8exw6xec | details:{"userId":"2020fd92-57c9-4295-b6f9-de7fd9594c91","email":"admin@workify.com"}

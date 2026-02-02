@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { workifyApi } from '@/lib/api/client';
 import SpecialDayAssignmentsTable from '@/components/features/employees/SpecialDayAssignmentsTable';
 
 interface SpecialDayAssignment {
@@ -28,14 +29,8 @@ export default function SpecialAssignmentsPage() {
       setLoading(true);
       setError(null);
       
-      const response = await fetch('/api/employees/special-assignments');
-      
-      if (!response.ok) {
-        throw new Error('Error al cargar asignaciones especiales');
-      }
-
-      const data = await response.json();
-      setAssignments(data.assignments || []);
+      const data = await workifyApi.get<{ specialAssignments?: SpecialDayAssignment[] }>('/employees/special-assignments');
+      setAssignments(data.specialAssignments || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error inesperado');
     } finally {

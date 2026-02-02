@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { workifyApi } from '@/lib/api/client';
 
 interface DashboardStats {
   totalEmployees: number;
@@ -52,14 +53,23 @@ export function useDashboardStats() {
         setLoading(true);
         setError(null);
 
-        const response = await fetch('/api/dashboard/stats');
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch dashboard stats');
-        }
-
-        const result = await response.json();
-        setData(result);
+        const result = await workifyApi.get<{ totalEmployees?: number }>('/dashboard/stats');
+        setData({
+          stats: {
+            totalEmployees: result.totalEmployees ?? 0,
+            activeEmployees: 0,
+            inactiveEmployees: 0,
+            suspendedEmployees: 0,
+            totalRoles: 0,
+            totalDepartments: 0,
+            todayScheduled: 0,
+            todayActive: 0,
+            isWorkDay: true,
+          },
+          departmentStats: [],
+          recentActivity: [],
+          company: { name: '' },
+        });
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred');
       } finally {
@@ -70,14 +80,32 @@ export function useDashboardStats() {
     fetchStats();
   }, []);
 
-  const refetch = () => {
+  const refetch = async () => {
     setLoading(true);
     setError(null);
-    fetch('/api/dashboard/stats')
-      .then(res => res.json())
-      .then(setData)
-      .catch(err => setError(err.message))
-      .finally(() => setLoading(false));
+    try {
+      const result = await workifyApi.get<{ totalEmployees?: number }>('/dashboard/stats');
+      setData({
+        stats: {
+          totalEmployees: result.totalEmployees ?? 0,
+          activeEmployees: 0,
+          inactiveEmployees: 0,
+          suspendedEmployees: 0,
+          totalRoles: 0,
+          totalDepartments: 0,
+          todayScheduled: 0,
+          todayActive: 0,
+          isWorkDay: true,
+        },
+        departmentStats: [],
+        recentActivity: [],
+        company: { name: '' },
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return {

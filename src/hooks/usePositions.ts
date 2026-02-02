@@ -1,10 +1,11 @@
 import { useEffect, useState, useCallback } from 'react';
+import { workifyApi } from '@/lib/api/client';
 
 export interface Position {
   id: string;
   name: string;
   description?: string;
-  companyId: string;
+  companyId?: string;
 }
 
 export function usePositions() {
@@ -16,9 +17,7 @@ export function usePositions() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/positions');
-      if (!res.ok) throw new Error('Error al obtener cargos');
-      const data = await res.json();
+      const data = await workifyApi.get<{ positions: Position[] }>('/positions');
       setPositions(data.positions || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido');
@@ -31,10 +30,8 @@ export function usePositions() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/positions/${id}`);
-      if (!res.ok) throw new Error('Error al obtener el cargo');
-      const data = await res.json();
-      return data.position;
+      const data = await workifyApi.get<{ position: Position }>(`/positions/${id}`);
+      return data.position ?? null;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido');
       return null;

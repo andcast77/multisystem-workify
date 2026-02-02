@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { workifyApi } from '@/lib/api/client';
 import { DailyAttendanceStats } from '@/services/attendance.service';
 
 interface UseAttendanceStatsReturn {
@@ -21,16 +22,8 @@ export function useAttendanceStats(date?: Date): UseAttendanceStatsReturn {
       setError(null);
 
       const dateParam = date ? date.toISOString().split('T')[0] : '';
-      const url = `/api/attendance/stats${dateParam ? `?date=${dateParam}` : ''}`;
-      
-      const response = await fetch(url);
-      
-      if (!response.ok) {
-        throw new Error('Error al obtener estadísticas de asistencia');
-      }
-
-      const data = await response.json();
-      setStats(data.stats);
+      const data = await workifyApi.get<{ present?: number }>(`/attendance/stats${dateParam ? `?date=${dateParam}` : ''}`);
+      setStats({ present: data.present ?? 0 } as DailyAttendanceStats);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido');
     } finally {

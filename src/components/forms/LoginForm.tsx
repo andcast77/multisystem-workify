@@ -2,6 +2,9 @@
 
 import { useState, useTransition, useEffect } from 'react';
 import { Button, Input } from '@/components/ui';
+import { authApi } from '@/lib/api/client';
+
+type CompanyOption = { id: string; name: string; workifyEnabled?: boolean; shopflowEnabled?: boolean };
 
 // Función para generar token CSRF
 function generateCSRFToken(): string {
@@ -25,6 +28,8 @@ export default function LoginForm() {
   const [error, setError] = useState('');
   const [isLoading, startTransition] = useTransition();
   const [csrfToken, setCsrfToken] = useState('');
+  const [companies, setCompanies] = useState<CompanyOption[] | null>(null);
+  const [loginToken, setLoginToken] = useState<string | null>(null);
 
   // Generar token CSRF al montar el componente
   useEffect(() => {
@@ -85,42 +90,107 @@ export default function LoginForm() {
 
     startTransition(async () => {
       try {
-        const response = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'X-CSRF-Token': csrfToken
-          },
-          credentials: 'include',
-          body: JSON.stringify({ 
-            email: email.toLowerCase().trim(), 
-            password,
-            csrfToken 
-          }),
+        const res = await authApi.post<{
+          success?: boolean;
+          data?: { user: unknown; token?: string; companyId?: string; company?: unknown; companies?: CompanyOption[] };
+          error?: string;
+        }>('/login', {
+          email: email.toLowerCase().trim(),
+          password,
+          csrfToken,
         });
 
-        if (!response.ok) {
-          const data = await response.json();
-          setError(data.error || 'Error al iniciar sesión');
+        const data = res && typeof res === 'object' && 'data' in res ? (res as { data?: { user: unknown; token?: string; companyId?: string; companies?: CompanyOption[] } }).data : res as { user?: unknown; token?: string; companyId?: string; companies?: CompanyOption[] };
+        const err = (res as { error?: string })?.error ?? data?.error;
+        if (err) {
+          setError(err);
           return;
         }
 
-        const data = await response.json();
-        
-        // Validar respuesta del servidor
-        if (!data.user || !data.token) {
+        const token = data?.token ?? (res as { token?: string }).token;
+        const companyId = data?.companyId ?? (res as { companyId?: string }).companyId;
+        const companiesList = data?.companies ?? (res as { companies?: CompanyOption[] }).companies;
+
+        if (!data?.user && !(res as { user?: unknown }).user) {
           setError('Respuesta del servidor inválida');
           return;
         }
+        if (!token) {
+          setError('No se recibió token');
+          return;
+        }
 
-        // Redirigir solo si la respuesta es válida
+        if (companiesList && companiesList.length > 1 && !companyId) {
+          if (typeof document !== 'undefined' && token) {
+            document.cookie = `token=${encodeURIComponent(token)}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Strict`;
+          }
+          setLoginToken(token);
+          setCompanies(companiesList);
+          return;
+        }
+
+        if (typeof document !== 'undefined' && token) {
+          document.cookie = `token=${encodeURIComponent(token)}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Strict`;
+        }
         window.location.href = '/dashboard';
-      } catch (error) {
-        console.error('Error de login:', error);
+      } catch (err) {
+        console.error('Error de login:', err);
         setError('Error de conexión. Inténtalo de nuevo.');
       }
     });
   };
+
+  const handleChooseCompany = async (companyId: string) => {
+    setError('');
+    startTransition(async () => {
+      try {
+        const res = await authApi.post<{ success?: boolean; data?: { token?: string }; error?: string }>(
+          '/context',
+          { companyId }
+        );
+        const data = res && typeof res === 'object' && 'data' in res ? (res as { data?: { token?: string } }).data : res as { token?: string };
+        const newToken = data?.token ?? (res as { token?: string }).token;
+        if (newToken && typeof document !== 'undefined') {
+          document.cookie = `token=${encodeURIComponent(newToken)}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Strict`;
+        }
+        window.location.href = '/dashboard';
+      } catch (err) {
+        console.error('Error al elegir empresa:', err);
+        setError('Error al elegir empresa. Inténtalo de nuevo.');
+      }
+    });
+  };
+
+  if (companies && companies.length > 1) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 sm:px-6 lg:px-8">
+        <div className="w-full max-w-sm sm:max-w-md">
+          <div className="bg-white rounded-lg shadow-md p-6 sm:p-8">
+            <div className="text-center mb-6">
+              <h1 className="text-xl font-bold text-gray-900 mb-2">Elige una empresa</h1>
+              <p className="text-sm text-gray-600">Tienes acceso a varias empresas. Selecciona con cuál continuar.</p>
+            </div>
+            <div className="space-y-2">
+              {companies.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => handleChooseCompany(c.id)}
+                  disabled={isLoading}
+                  className="w-full text-left px-4 py-3 rounded-lg border border-gray-200 hover:bg-gray-50 hover:border-blue-300 transition-colors"
+                >
+                  <span className="font-medium text-gray-900">{c.name}</span>
+                </button>
+              ))}
+            </div>
+            {error && (
+              <div className="mt-4 bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-md text-sm">{error}</div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 sm:px-6 lg:px-8">

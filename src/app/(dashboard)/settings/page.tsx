@@ -1,8 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Card } from '@/components/ui/layout/Card';
+import { workifyApi } from '@/lib/api/client';
 import { 
   Users, 
   Clock, 
@@ -14,7 +15,16 @@ import {
   Bell
 } from 'lucide-react';
 
+type MeUser = { membershipRole?: string; isSuperuser?: boolean };
+
 export default function SettingsPage() {
+  const [currentUser, setCurrentUser] = useState<MeUser | null>(null);
+  useEffect(() => {
+    workifyApi.get<{ user?: MeUser }>('/me').then((r) => r?.user && setCurrentUser(r.user)).catch(() => {});
+  }, []);
+
+  const isOwnerOrSuperuser = currentUser?.membershipRole === 'OWNER' || currentUser?.isSuperuser === true;
+
   const settingsSections = [
     {
       title: 'Gestión de Personal',
@@ -134,6 +144,16 @@ export default function SettingsPage() {
           </div>
         ))}
       </div>
+
+      {isOwnerOrSuperuser && (
+        <div className="border border-amber-200 rounded-lg p-6 bg-amber-50/50">
+          <h2 className="text-lg font-semibold text-amber-900 mb-2">Zona de peligro</h2>
+          <p className="text-sm text-amber-800 mb-4">Solo el propietario de la empresa puede eliminar la empresa. Esta acción no se puede deshacer.</p>
+          <button type="button" disabled className="px-4 py-2 rounded bg-gray-300 text-gray-500 cursor-not-allowed text-sm">
+            Eliminar empresa (próximamente)
+          </button>
+        </div>
+      )}
     </div>
   );
 } 

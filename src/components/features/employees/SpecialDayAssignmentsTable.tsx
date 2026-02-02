@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { workifyApi } from '@/lib/api/client';
 import { Button } from '@/components/ui/buttons/Button';
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/data/Table';
 import { Badge } from '@/components/ui/data/Badge';
@@ -98,14 +99,7 @@ export default function SpecialDayAssignmentsTable({
     }
 
     try {
-      const response = await fetch(`/api/employees/special-assignments/${assignment.id}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        throw new Error('Error al eliminar la asignación');
-      }
-
+      await workifyApi.delete(`/employees/special-assignments/${assignment.id}`);
       onRefresh?.();
     } catch (error) {
       console.error('Error deleting assignment:', error);

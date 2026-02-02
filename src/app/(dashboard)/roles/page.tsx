@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { workifyApi } from '@/lib/api/client';
 import { Card } from '@/components/ui/layout/Card';
 import { Button } from '@/components/ui/buttons/Button';
 import { Badge } from '@/components/ui/data/Badge';
@@ -55,15 +56,7 @@ export default function RolesPage() {
   const fetchRoles = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/roles', {
-        credentials: 'include'
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch roles');
-      }
-
-      const data = await response.json();
+      const data = await workifyApi.get<{ roles: Role[] }>('/roles');
       setRoles(data.roles || []);
     } catch (error) {
       console.error('Error fetching roles:', error);
@@ -86,25 +79,11 @@ export default function RolesPage() {
     e.preventDefault();
     
     try {
-      const url = editingRole 
-        ? `/api/roles/${editingRole.id}`
-        : '/api/roles';
-      
-      const method = editingRole ? 'PUT' : 'POST';
-      
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to save role');
+      if (editingRole) {
+        await workifyApi.put(`/roles/${editingRole.id}`, formData);
+      } else {
+        await workifyApi.post('/roles', formData);
       }
-
       await fetchRoles();
       handleCloseModal();
     } catch (error) {
@@ -118,15 +97,7 @@ export default function RolesPage() {
     }
 
     try {
-      const response = await fetch(`/api/roles/${id}`, {
-        method: 'DELETE',
-        credentials: 'include'
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete role');
-      }
-
+      await workifyApi.delete(`/roles/${id}`);
       await fetchRoles();
     } catch (error) {
       console.error('Error deleting role:', error);

@@ -1,5 +1,0 @@
-[2026-01-08T23:25:43.917Z] | [INFO] | [SYSTEM_STARTUP] | Sistema de logging de seguridad iniciado | session:session_1767914743917_0i81665j1q2a
-[2026-01-08T23:33:09.593Z] | [INFO] | [SYSTEM_STARTUP] | Sistema de logging de seguridad iniciado | session:session_1767915189593_za6qrnf5h7h
-[2026-01-08T23:34:15.884Z] | [INFO] | [SYSTEM_STARTUP] | Sistema de logging de seguridad iniciado | session:session_1767915255884_o4tacfn4fo8
-[2026-01-08T23:42:21.087Z] | [INFO] | [SYSTEM_STARTUP] | Sistema de logging de seguridad iniciado | session:session_1767915741087_6i47husgzbc
-[2026-01-08T23:44:51.876Z] | [INFO] | [LOGIN_SUCCESS] | Login exitoso para admin@workify.com | ip:::1 | path:/api/auth/login | method:POST | session:session_1767915891876_wveuspt6wpe | details:{"userId":"e5b31de6-c1a6-412b-80eb-3c2bb98986e5","email":"admin@workify.com"}

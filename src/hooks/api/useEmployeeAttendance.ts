@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { workifyApi } from '@/lib/api/client';
 
 interface AttendanceDay {
   date: Date;
@@ -63,27 +64,20 @@ export function useEmployeeAttendance(
       setError(null);
 
       const monthParam = month || new Date().toISOString().slice(0, 7); // YYYY-MM
-      const url = `/api/employees/${employeeId}/attendance?month=${monthParam}`;
-      
-      const response = await fetch(url);
-      
-      if (!response.ok) {
-        throw new Error('Error al obtener datos de asistencia');
-      }
+      const result = await workifyApi.get<{ attendance: Array<Record<string, unknown>>; employee?: EmployeeAttendanceData['employee']; kpis?: unknown }>(`/employees/${employeeId}/attendance?month=${monthParam}`);
 
-      const result = await response.json();
-      
-      // Convertir fechas de string a Date
-      const attendanceWithDates = result.attendance.map((day: AttendanceDay & { date: string; clockIn: string | null; clockOut: string | null }) => ({
+      const attendanceWithDates = (result.attendance || []).map((day: Record<string, unknown>) => ({
         ...day,
-        date: new Date(day.date),
-        clockIn: day.clockIn ? new Date(day.clockIn) : null,
-        clockOut: day.clockOut ? new Date(day.clockOut) : null,
+        date: day.date ? new Date(day.date as string) : new Date(),
+        clockIn: day.clockIn ? new Date(day.clockIn as string) : null,
+        clockOut: day.clockOut ? new Date(day.clockOut as string) : null,
       }));
 
       setData({
-        ...result,
-        attendance: attendanceWithDates
+        employee: result.employee ?? { id: employeeId, firstName: '', lastName: '', position: null, department: null },
+        month: monthParam,
+        attendance: attendanceWithDates,
+        kpis: result.kpis ?? { totalDays: 0, workDays: 0, presentDays: 0, lateDays: 0, absentDays: 0, incidents: 0, totalHours: 0 },
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido');

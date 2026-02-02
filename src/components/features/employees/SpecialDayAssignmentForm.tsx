@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { workifyApi } from '@/lib/api/client';
 import { Button } from '@/components/ui/buttons/Button';
 import { Input } from '@/components/ui/forms/Input';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/forms/Select';
@@ -60,13 +61,7 @@ export default function SpecialDayAssignmentForm({
     const fetchEmployees = async () => {
       try {
         setLoadingEmployees(true);
-        const response = await fetch('/api/employees');
-        
-        if (!response.ok) {
-          throw new Error('Error al cargar empleados');
-        }
-
-        const data = await response.json();
+        const data = await workifyApi.get<{ employees: Employee[] }>('/employees?limit=500');
         setEmployees(data.employees || []);
       } catch (err) {
         setError('Error al cargar la lista de empleados');
@@ -133,22 +128,10 @@ export default function SpecialDayAssignmentForm({
     setError(null);
 
     try {
-      const url = mode === 'create' 
-        ? '/api/employees/special-assignments' 
-        : `/api/employees/special-assignments/${assignment?.id}`;
-      const method = mode === 'create' ? 'POST' : 'PUT';
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Error al guardar asignación');
+      if (mode === 'create') {
+        await workifyApi.post('/employees/special-assignments', formData);
+      } else {
+        await workifyApi.put(`/employees/special-assignments/${assignment?.id}`, formData);
       }
 
       await response.json();

@@ -1,5 +1,0 @@
-[2025-08-06T21:19:26.399Z] | [INFO] | [SYSTEM_STARTUP] | Sistema de logging de seguridad iniciado | session:session_1754515166399_gncpvd7m7pb
-[2025-08-06T21:19:27.231Z] | [INFO] | [LOGIN_SUCCESS] | Login exitoso para admin@workify.com | ip:::1 | path:/api/auth/login | method:POST | session:session_1754515167231_qeh41li1gn | details:{"userId":"2020fd92-57c9-4295-b6f9-de7fd9594c91","email":"admin@workify.com"}
-[2025-08-06T21:24:54.538Z] | [INFO] | [SYSTEM_STARTUP] | Sistema de logging de seguridad iniciado | session:session_1754515494538_eqbc7251w4c
-[2025-08-06T21:24:58.622Z] | [INFO] | [SYSTEM_STARTUP] | Sistema de logging de seguridad iniciado | session:session_1754515498622_elwn5z2m3q
-[2025-08-06T21:24:59.167Z] | [INFO] | [LOGIN_SUCCESS] | Login exitoso para admin@workify.com | ip:::1 | path:/api/auth/login | method:POST | session:session_1754515499167_fras55nz8wq | details:{"userId":"2020fd92-57c9-4295-b6f9-de7fd9594c91","email":"admin@workify.com"}

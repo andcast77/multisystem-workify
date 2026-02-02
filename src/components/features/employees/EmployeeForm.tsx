@@ -2,6 +2,7 @@
 
 import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { workifyApi } from '@/lib/api/client';
 import { Button } from '@/components/ui/buttons/Button';
 import { Input } from '@/components/ui/forms/Input';
 import { usePositions } from '@/hooks/usePositions';
@@ -178,30 +179,17 @@ export default function EmployeeForm({ employee, mode }: EmployeeFormProps) {
     setError(null);
 
     try {
-      const url = mode === 'create' ? '/api/employees' : `/api/employees/${employee?.id}`;
-      const method = mode === 'create' ? 'POST' : 'PUT';
-
-      // Prepara los datos para enviar: si birthDate o dateJoined es '', envíalos como null
       const dataToSend = {
         ...formData,
         birthDate: formData.birthDate || null,
         dateJoined: formData.dateJoined || null,
       };
 
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(dataToSend),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Error al guardar empleado');
+      if (mode === 'create') {
+        await workifyApi.post('/employees', dataToSend);
+      } else {
+        await workifyApi.put(`/employees/${employee?.id}`, dataToSend);
       }
-
-      await response.json();
       
       // Redirigir a la lista de empleados
       router.push('/employees');

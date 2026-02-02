@@ -1,6 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Turbopack: raíz del proyecto para no usar el monorepo y evitar compilación lenta
+  turbopack: {
+    root: __dirname,
+  },
+
   // basePath eliminado - cada módulo tiene su propio dominio en Vercel
   // Configuraciones de seguridad críticas
   poweredByHeader: false, // Remover header X-Powered-By

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { workifyApi } from '@/lib/api/client';
 import { Button } from '@/components/ui/buttons/Button';
 import { Card } from '@/components/ui/layout/Card';
 import { Badge } from '@/components/ui/data/Badge';
@@ -57,16 +58,8 @@ export default function WorkShiftsPage() {
       setLoading(true);
       setError(null);
 
-      const response = await fetch('/api/work-shifts', {
-        credentials: 'include'
-      });
-      
-      if (!response.ok) {
-        throw new Error('Error al cargar los turnos');
-      }
-
-      const data = await response.json();
-      setWorkShifts(data.workShifts);
+      const data = await workifyApi.get<{ workShifts: WorkShift[] }>('/work-shifts');
+      setWorkShifts(data.workShifts || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido');
     } finally {
@@ -80,23 +73,11 @@ export default function WorkShiftsPage() {
     try {
       setSubmitting(true);
 
-      const response = await fetch('/api/work-shifts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          ...formData,
-          breakStart: formData.breakStart || null,
-          breakEnd: formData.breakEnd || null,
-        }),
+      await workifyApi.post('/work-shifts', {
+        ...formData,
+        breakStart: formData.breakStart || null,
+        breakEnd: formData.breakEnd || null,
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Error al crear el turno');
-      }
 
       // Limpiar formulario y recargar datos
       setFormData({

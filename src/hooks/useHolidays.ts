@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { workifyApi } from '@/lib/api/client';
 
 interface Holiday {
   id: string;
@@ -22,15 +23,7 @@ export function useHolidays() {
       setLoading(true);
       setError(null);
 
-      const response = await fetch('/api/holidays', {
-        credentials: 'include'
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch holidays');
-      }
-
-      const data = await response.json();
+      const data = await workifyApi.get<{ holidays: Holiday[] }>('/holidays');
       setHolidays(data.holidays || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
